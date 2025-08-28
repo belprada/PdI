@@ -1,12 +1,7 @@
 package ar.edu.utn.dds.k3003.controller;
 
 import ar.edu.utn.dds.k3003.app.Fachada;
-import ar.edu.utn.dds.k3003.app.FachadaSolicitudMock;
-import ar.edu.utn.dds.k3003.facades.FachadaFuente;
-import ar.edu.utn.dds.k3003.facades.FachadaSolicitudes;
-import ar.edu.utn.dds.k3003.facades.dtos.EstadoSolicitudBorradoEnum;
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
-import ar.edu.utn.dds.k3003.facades.dtos.SolicitudDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
-import java.util.NoSuchElementException;
+
 
 @RestController
 @RequestMapping("/api/PdIs")
