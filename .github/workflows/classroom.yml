@@ -1,0 +1,40 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: MVN Test
+      id: mvn-test
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: MVN Test
+        setup-command: mvn clean test-compile
+        command: mvn test
+        timeout: 10
+        max-score: 1
+    - name: Evaluator
+      id: evaluator
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Evaluator
+        setup-command: mvn clean compile
+        command: mvn exec:java -Dexec.mainClass="ar.edu.utn.dds.k3003.Evaluador"
+        timeout: 10
+        max-score: 2
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        MVN-TEST_RESULTS: "${{steps.mvn-test.outputs.result}}"
+        EVALUATOR_RESULTS: "${{steps.evaluator.outputs.result}}"
+      with:
+        runners: mvn-test,evaluator
