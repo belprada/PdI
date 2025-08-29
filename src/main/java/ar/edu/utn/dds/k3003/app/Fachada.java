@@ -1,13 +1,14 @@
 package ar.edu.utn.dds.k3003.app;
 
 import ar.edu.utn.dds.k3003.client.SolicitudesProxy;
+import ar.edu.utn.dds.k3003.dto.PdIDTO2;
 import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
 import ar.edu.utn.dds.k3003.facades.FachadaSolicitudes;
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
 import ar.edu.utn.dds.k3003.model.PdI;
-import ar.edu.utn.dds.k3003.repository.InMemoryPdIRepo;
 import ar.edu.utn.dds.k3003.repository.PdIRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -15,36 +16,31 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
-public class Fachada implements FachadaProcesadorPdI {
+public class Fachada {
 
-  private PdIRepository pdiRepository;
+  private final PdIRepository pdiRepository;
   private Integer pdiID = 0;
+  @Setter
   private FachadaSolicitudes fachadaSolicitudes;
   private ObjectMapper objectMapper;
 
-  public Fachada() {
-    this.pdiRepository = new InMemoryPdIRepo();
-  }
-
-  @Autowired
   public Fachada(PdIRepository pdiRepository) {
     this.pdiRepository = pdiRepository;
     this.objectMapper = new ObjectMapper();
     this.fachadaSolicitudes = new SolicitudesProxy(objectMapper);
   }
 
-  public PdIDTO procesar(PdIDTO var1) throws IllegalStateException {
+  public PdIDTO2 procesar(PdIDTO2 var1) throws IllegalStateException {
 
-
-    if(fachadaSolicitudes.estaActivo(var1.hechoId())) {
-      if(buscarPorHecho(var1.hechoId()).isEmpty()) {
-        PdI pdiNuevo = new PdI(var1.id(), var1.hechoId());
+    if(fachadaSolicitudes.estaActivo(var1.getHechoId())) {
+      if(buscarPorHecho(var1.getHechoId()).isEmpty()) {
+        PdI pdiNuevo = new PdI(var1.getId(), var1.getHechoId());
         //pdiID++;
         this.pdiRepository.save(pdiNuevo);
-        return new PdIDTO(pdiNuevo.getId().toString(), pdiNuevo.getHecho());
+        return new PdIDTO2(pdiNuevo.getId(), pdiNuevo.getHecho());
       }
       else {
-        return buscarPorHecho(var1.hechoId()).get(0);
+        return buscarPorHecho(var1.getHechoId()).get(0);
       }
     } else {
       throw new IllegalStateException("No esta activo");
@@ -52,7 +48,7 @@ public class Fachada implements FachadaProcesadorPdI {
   }
 
 
-  public PdIDTO buscarPdIPorId(String var1) throws NoSuchElementException {
+  public PdIDTO2 buscarPdIPorId(String var1) throws NoSuchElementException {
     Optional<PdI> pdIOptional = this.pdiRepository.findById(var1);
     if (pdIOptional.isEmpty()) {
       throw new NoSuchElementException(pdIOptional + " no existe");
@@ -60,26 +56,23 @@ public class Fachada implements FachadaProcesadorPdI {
 
     PdI pdi = pdIOptional.get();
 
-    return new PdIDTO(pdi.getId().toString(), pdi.getHecho());
+    return new PdIDTO2(pdi.getId(), pdi.getHecho());
   }
 
 
-  public List<PdIDTO> buscarPorHecho(String var1) throws NoSuchElementException {
+  public List<PdIDTO2> buscarPorHecho(String var1) throws NoSuchElementException {
 
     List<PdI> pdIList = this.pdiRepository.findByHecho(var1);
 
-    return pdIList.stream().map(pdi -> new PdIDTO(pdi.getId().toString(), pdi.getHecho())).toList();
+    return pdIList.stream().map(pdi -> new PdIDTO2(pdi.getId(), pdi.getHecho())).toList();
   }
 
-  public List<PdIDTO> buscarTodos() {
+  public List<PdIDTO2> buscarTodos() {
     List<PdI> pdIList = this.pdiRepository.findAll();
 
-    return pdIList.stream().map(pdi -> new PdIDTO(pdi.getId().toString(), pdi.getHecho())).toList();
+    return pdIList.stream().map(pdi -> new PdIDTO2(pdi.getId(), pdi.getHecho())).toList();
 
   }
 
 
-  public void setFachadaSolicitudes(FachadaSolicitudes var1) {
-    fachadaSolicitudes = var1;
-  }
 }

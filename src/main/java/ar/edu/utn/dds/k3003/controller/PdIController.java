@@ -1,7 +1,7 @@
 package ar.edu.utn.dds.k3003.controller;
 
 import ar.edu.utn.dds.k3003.app.Fachada;
-import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
+import ar.edu.utn.dds.k3003.dto.PdIDTO2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +26,7 @@ public class PdIController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PdIDTO>> listarPdI(@RequestParam(value = "hecho", required = false) String hecho) {
+    public ResponseEntity<List<PdIDTO2>> listarPdI(@RequestParam(value = "hecho", required = false) String hecho) {
         if (hecho == null) {
             // Si no se proporciona el parámetro "hecho", devuelve todos los PdIDTO
             return ResponseEntity.ok(fachada.buscarTodos());
@@ -37,13 +37,13 @@ public class PdIController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PdIDTO> obtenerPdI(@PathVariable String id) {
+    public ResponseEntity<PdIDTO2> obtenerPdI(@PathVariable String id) {
         return ResponseEntity.ok(fachada.buscarPdIPorId(id));
     }
 
     @PostMapping
-    public ResponseEntity<PdIDTO> crearPdI(@RequestBody PdIDTO pdIDTO) {
-        return ResponseEntity.ok(fachada.procesar(pdIDTO));
+    public ResponseEntity<PdIDTO2> crearPdI(@RequestBody PdIDTO2 pdIDTO2) {
+        return ResponseEntity.ok(fachada.procesar(pdIDTO2));
     }
 
 }

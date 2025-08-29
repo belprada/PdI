@@ -20,7 +20,7 @@ public class SolicitudesProxy implements FachadaSolicitudes {
     public SolicitudesProxy(ObjectMapper objectMapper) {
 
         var env = System.getenv();
-        this.endpoint = env.getOrDefault("https://two025-tp-entrega-2-stephieortiz.onrender.com/", "http://localhost:8081/");
+        this.endpoint = env.getOrDefault("SOLICITUDES", "https://two025-tp-entrega-2-facundo-gs.onrender.com");
 
         var retrofit =
                 new Retrofit.Builder()
@@ -59,10 +59,10 @@ public class SolicitudesProxy implements FachadaSolicitudes {
     @SneakyThrows
     @Override
     public boolean estaActivo(String s) {
-        Response<SolicitudDTO> execute = service.get(s).execute();
+        Response<List<SolicitudDTO>> execute = service.get(s).execute();
         if (execute.isSuccessful()) {
 
-            return !execute.body().estado().equals(EstadoSolicitudBorradoEnum.RECHAZADA);
+            return !execute.body().get(0).estado().equals(EstadoSolicitudBorradoEnum.RECHAZADA);
         }
         if(execute.code() == HttpStatus.NOT_FOUND.getCode()) {
             throw new NoSuchElementException("no est activo la solicitud");
