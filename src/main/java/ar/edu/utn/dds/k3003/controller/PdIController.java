@@ -4,13 +4,8 @@ import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.dto.PdIDTO2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 
@@ -44,6 +39,20 @@ public class PdIController {
     @PostMapping
     public ResponseEntity<PdIDTO2> crearPdI(@RequestBody PdIDTO2 pdIDTO2) {
         return ResponseEntity.ok(fachada.procesar(pdIDTO2));
+    }
+    @PostMapping("/lote")
+    public ResponseEntity<List<PdIDTO2>> crearPdIs(@RequestBody List<PdIDTO2> listaDto) {
+        return ResponseEntity.ok(fachada.procesarLista(listaDto));
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<PdIDTO2> actualizarPdIPorId(@PathVariable String id,
+                                                      @RequestBody PdIDTO2 dto) {
+        return ResponseEntity.ok(fachada.actualizarPorId(id, dto));
+    }
+    @PutMapping
+    public ResponseEntity<List<PdIDTO2>> actualizarPorHecho(@RequestParam String hecho,
+                                                            @RequestBody PdIDTO2 dto) {
+        return ResponseEntity.ok(fachada.actualizarPorHecho(hecho, dto));
     }
 
 }

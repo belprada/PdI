@@ -53,4 +53,34 @@ public class Fachada {
             .map(pdi -> new PdIDTO2(pdi.getId(), pdi.getHecho()))
             .toList();
   }
+  public List<PdIDTO2> procesarLista(List<PdIDTO2> listaDto) {
+    return listaDto.stream()
+            .map(this::procesar) // reusa tu procesar() individual
+            .toList();
+  }
+  public PdIDTO2 actualizarPorId(String id, PdIDTO2 dto) {
+    PdI existente = pdiRepository.findById(id)
+            .orElseThrow(() -> new NoSuchElementException("No existe PdI con id " + id));
+
+    // actualizar campos
+    existente.setHecho(dto.getHechoId());
+
+    PdI guardado = pdiRepository.save(existente);
+    return new PdIDTO2(guardado.getId(), guardado.getHecho());
+  }
+  public List<PdIDTO2> actualizarPorHecho(String hecho, PdIDTO2 dto) {
+    List<PdI> lista = pdiRepository.findByHecho(hecho);
+
+    if (lista.isEmpty()) {
+      throw new NoSuchElementException("No existen PdIs con hecho " + hecho);
+    }
+
+    lista.forEach(pdi -> pdi.setHecho(dto.getHechoId()));
+    pdiRepository.saveAll(lista);
+
+    return lista.stream()
+            .map(pdi -> new PdIDTO2(pdi.getId(), pdi.getHecho()))
+            .toList();
+  }
+
 }
