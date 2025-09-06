@@ -20,7 +20,7 @@ public class SolicitudesProxy implements FachadaSolicitudes {
     public SolicitudesProxy(ObjectMapper objectMapper) {
 
         var env = System.getenv();
-        this.endpoint = env.getOrDefault("SOLICITUDES", "https://two025-tp-entrega-2-facundo-gs.onrender.com");
+        this.endpoint = env.getOrDefault("SOLICITUDES", "https://solicitudes-od4r.onrender.com/");
 
         var retrofit =
                 new Retrofit.Builder()

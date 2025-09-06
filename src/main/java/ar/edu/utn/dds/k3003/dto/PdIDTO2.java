@@ -20,9 +20,11 @@ public class PdIDTO2 {
     private String contenido;
     private List<String> etiquetas;
 
+    // Agregar mas argumentos, o es por algo
     public PdIDTO2(String id, String hecho) {
         this.id = id;
         this.hechoId = hecho;
+
     }
 
 }

@@ -10,4 +10,6 @@ import java.util.Optional;
 @Repository
 public interface PdIRepository extends JpaRepository<PdI, String> {
     List<PdI> findByHecho(String hecho);
+
+
 }
