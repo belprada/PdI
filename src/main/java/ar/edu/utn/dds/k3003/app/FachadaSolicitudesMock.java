@@ -1,16 +1,19 @@
-package ar.edu.utn.dds.k3003.app;
+package ar.edu.utn.dds.k3003.mocks;
 
 import ar.edu.utn.dds.k3003.facades.FachadaFuente;
 import ar.edu.utn.dds.k3003.facades.FachadaSolicitudes;
 import ar.edu.utn.dds.k3003.facades.dtos.EstadoSolicitudBorradoEnum;
 import ar.edu.utn.dds.k3003.facades.dtos.SolicitudDTO;
+
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class FachadaSolicitudMock implements FachadaSolicitudes {
-
-    public  FachadaSolicitudMock() {  }
-
+@Component
+@Profile("dev")
+public class FachadaSolicitudesMock implements FachadaSolicitudes {
 
     @Override
     public SolicitudDTO agregar(SolicitudDTO solicitudDTO) {
@@ -18,7 +21,9 @@ public class FachadaSolicitudMock implements FachadaSolicitudes {
     }
 
     @Override
-    public SolicitudDTO modificar(String s, EstadoSolicitudBorradoEnum estadoSolicitudBorradoEnum, String s1) throws NoSuchElementException {
+    public SolicitudDTO modificar(
+            String s, EstadoSolicitudBorradoEnum estadoSolicitudBorradoEnum, String s1)
+            throws NoSuchElementException {
         return null;
     }
 
@@ -33,12 +38,12 @@ public class FachadaSolicitudMock implements FachadaSolicitudes {
     }
 
     @Override
-    public boolean estaActivo(String s) {
-        return true;
+    public boolean estaActivo(String hechoId) {
+        return false;
     }
 
     @Override
     public void setFachadaFuente(FachadaFuente fachadaFuente) {
-
+        // Vacío
     }
 }
