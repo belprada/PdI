@@ -38,21 +38,21 @@ public class Fachada {
 
   public PdIDTO buscarPdIPorId(String var1) {
     return this.pdiRepository.findById(var1)
-            .map(pdi -> new PdIDTO(pdi.getId(), pdi.getHechoId()))
+            .map(pdi -> new PdIDTO(String.valueOf(pdi.getId()), pdi.getHechoId()))
             .orElseThrow(() -> new NoSuchElementException(var1 + " no existe"));
   }
 
   public List<PdIDTO> buscarPorHecho(String var1) {
     return this.pdiRepository.findByHechoId(var1)
             .stream()
-            .map(pdi -> new PdIDTO(pdi.getId(), pdi.getHechoId()))
+            .map(pdi -> new PdIDTO(String.valueOf(pdi.getId()), pdi.getHechoId()))
             .toList();
   }
 
   public List<PdIDTO> buscarTodos() {
     return this.pdiRepository.findAll()
             .stream()
-            .map(pdi -> new PdIDTO(pdi.getId(), pdi.getHechoId()))
+            .map(pdi -> new PdIDTO(String.valueOf(pdi.getId()), pdi.getHechoId()))
             .toList();
   }
   public List<PdIDTO> procesarLista(List<PdIDTO> listaDto) {
@@ -68,7 +68,7 @@ public class Fachada {
     existente.setHechoId(dto.hechoId());
 
     PdI guardado = pdiRepository.save(existente);
-    return new PdIDTO(guardado.getId(), guardado.getHechoId());
+    return new PdIDTO(String.valueOf(guardado.getId()), guardado.getHechoId());
   }
 
   public List<PdIDTO> actualizarPorHecho(String hecho, PdIDTO dto) {
@@ -82,7 +82,7 @@ public class Fachada {
     pdiRepository.saveAll(lista);
 
     return lista.stream()
-            .map(pdi -> new PdIDTO(pdi.getId(), pdi.getHechoId()))
+            .map(pdi -> new PdIDTO(String.valueOf(pdi.getId()), pdi.getHechoId()))
             .toList();
   }
 

@@ -28,4 +28,6 @@ public class SolicitudesRestClient {
                 .body(new ParameterizedTypeReference<List<SolicitudDTO>>() {});
     }
 
+//    public boolean estaActivo
+
 }
