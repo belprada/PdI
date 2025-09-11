@@ -1,86 +1,110 @@
 package ar.edu.utn.dds.k3003.app;
 
-import ar.edu.utn.dds.k3003.client.SolicitudesProxy;
-import ar.edu.utn.dds.k3003.dto.PdIDTO2;
-import ar.edu.utn.dds.k3003.facades.FachadaProcesadorPdI;
-import ar.edu.utn.dds.k3003.facades.FachadaSolicitudes;
+import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
 import ar.edu.utn.dds.k3003.model.PdI;
 import ar.edu.utn.dds.k3003.repository.PdIRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
+import ar.edu.utn.dds.k3003.rest_client.FuenteRestClient;
+import ar.edu.utn.dds.k3003.rest_client.SolicitudesRestClient;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
+
 @Service
 public class Fachada {
 
   private final PdIRepository pdiRepository;
-  private final ObjectMapper objectMapper;
+  private final SolicitudesRestClient solicitudesRestClient;
+  private final FuenteRestClient fuenteRestClient;
 
-  public Fachada(PdIRepository pdiRepository) {
+
+  public Fachada(PdIRepository pdiRepository, SolicitudesRestClient solicitudesRestClient, FuenteRestClient fuenteRestClient) {
     this.pdiRepository = pdiRepository;
-    this.objectMapper = new ObjectMapper();
+    this.solicitudesRestClient = solicitudesRestClient;
+    this.fuenteRestClient = fuenteRestClient;
   }
 
-  public PdIDTO2 procesar(PdIDTO2 var1) {
+  public PdIDTO procesar(PdIDTO pdIDTO) {
 
-
-    PdI pdiNuevo = new PdI(var1.getId(), var1.getHechoId());
-    this.pdiRepository.save(pdiNuevo);
-
-    return new PdIDTO2(pdiNuevo.getId(), pdiNuevo.getHecho());
+    PdI pdiNuevo = dtoToPDI(pdIDTO);
+    try {
+      fuenteRestClient.findHechoById(pdiNuevo.getHechoId());
+      this.pdiRepository.save(pdiNuevo);
+      return pdiToDto(pdiNuevo);
+    }  catch (Exception e) {
+        throw new NoSuchElementException("No existe hecho activo bajo el id " + pdiNuevo.getHechoId());
+    }
   }
 
-  public PdIDTO2 buscarPdIPorId(String var1) {
+  public PdIDTO buscarPdIPorId(String var1) {
     return this.pdiRepository.findById(var1)
-            .map(pdi -> new PdIDTO2(pdi.getId(), pdi.getHecho()))
+            .map(pdi -> new PdIDTO(pdi.getId(), pdi.getHechoId()))
             .orElseThrow(() -> new NoSuchElementException(var1 + " no existe"));
   }
 
-  public List<PdIDTO2> buscarPorHecho(String var1) {
-    return this.pdiRepository.findByHecho(var1)
+  public List<PdIDTO> buscarPorHecho(String var1) {
+    return this.pdiRepository.findByHechoId(var1)
             .stream()
-            .map(pdi -> new PdIDTO2(pdi.getId(), pdi.getHecho()))
+            .map(pdi -> new PdIDTO(pdi.getId(), pdi.getHechoId()))
             .toList();
   }
 
-  public List<PdIDTO2> buscarTodos() {
+  public List<PdIDTO> buscarTodos() {
     return this.pdiRepository.findAll()
             .stream()
-            .map(pdi -> new PdIDTO2(pdi.getId(), pdi.getHecho()))
+            .map(pdi -> new PdIDTO(pdi.getId(), pdi.getHechoId()))
             .toList();
   }
-  public List<PdIDTO2> procesarLista(List<PdIDTO2> listaDto) {
+  public List<PdIDTO> procesarLista(List<PdIDTO> listaDto) {
     return listaDto.stream()
             .map(this::procesar) // reusa tu procesar() individual
             .toList();
   }
-  public PdIDTO2 actualizarPorId(String id, PdIDTO2 dto) {
+  public PdIDTO actualizarPorId(String id, PdIDTO dto) {
     PdI existente = pdiRepository.findById(id)
             .orElseThrow(() -> new NoSuchElementException("No existe PdI con id " + id));
 
     // actualizar campos
-    existente.setHecho(dto.getHechoId());
+    existente.setHechoId(dto.hechoId());
 
     PdI guardado = pdiRepository.save(existente);
-    return new PdIDTO2(guardado.getId(), guardado.getHecho());
+    return new PdIDTO(guardado.getId(), guardado.getHechoId());
   }
-  public List<PdIDTO2> actualizarPorHecho(String hecho, PdIDTO2 dto) {
-    List<PdI> lista = pdiRepository.findByHecho(hecho);
+
+  public List<PdIDTO> actualizarPorHecho(String hecho, PdIDTO dto) {
+    List<PdI> lista = pdiRepository.findByHechoId(hecho);
 
     if (lista.isEmpty()) {
       throw new NoSuchElementException("No existen PdIs con hecho " + hecho);
     }
 
-    lista.forEach(pdi -> pdi.setHecho(dto.getHechoId()));
+    lista.forEach(pdi -> pdi.setHechoId(dto.hechoId()));
     pdiRepository.saveAll(lista);
 
     return lista.stream()
-            .map(pdi -> new PdIDTO2(pdi.getId(), pdi.getHecho()))
+            .map(pdi -> new PdIDTO(pdi.getId(), pdi.getHechoId()))
             .toList();
+  }
+
+  public PdI dtoToPDI(PdIDTO pdiDTO) {
+      return new PdI(
+              pdiDTO.hechoId(),
+              pdiDTO.descripcion(),
+              pdiDTO.lugar(),
+              pdiDTO.momento(),
+              pdiDTO.contenido(),
+              pdiDTO.etiquetas());
+  }
+  private PdIDTO pdiToDto(PdI pdi) {
+    return new PdIDTO(
+            String.valueOf(pdi.getId()),
+            pdi.getHechoId(),
+            pdi.getDescripcion(),
+            pdi.getLugar(),
+            pdi.getMomento(),
+            pdi.getContenido(),
+            pdi.getEtiquetas()
+    );
   }
 
 }

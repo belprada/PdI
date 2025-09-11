@@ -9,6 +9,6 @@ import java.util.List;
 
 public interface SolicitudRetrofitClient {
 
-    @GET("solicitudes")
+    @GET("/api/solicitudes")
     Call<List<SolicitudDTO>> get(@Query("hechoId") String hechoId);
 }

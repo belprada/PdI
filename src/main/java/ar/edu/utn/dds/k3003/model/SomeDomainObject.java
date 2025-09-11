@@ -1,6 +1,6 @@
 package ar.edu.utn.dds.k3003.model;
 
-import ar.edu.utn.dds.k3003.model.exceptions.SomeDomainException;
+import ar.edu.utn.dds.k3003.exceptions.SomeDomainException;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
