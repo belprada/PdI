@@ -1,10 +1,8 @@
 package ar.edu.utn.dds.k3003.app;
 
-import ar.edu.utn.dds.k3003.facades.dtos.HechoDTO;
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
 import ar.edu.utn.dds.k3003.model.PdI;
 import ar.edu.utn.dds.k3003.repository.PdIRepository;
-import ar.edu.utn.dds.k3003.rest_client.FuenteRestClient;
 import ar.edu.utn.dds.k3003.rest_client.SolicitudesRestClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,13 +15,11 @@ public class Fachada {
 
   private final PdIRepository pdiRepository;
   private final SolicitudesRestClient solicitudesRestClient;
-  private final FuenteRestClient fuenteRestClient;
 
 
-  public Fachada(PdIRepository pdiRepository, SolicitudesRestClient solicitudesRestClient, FuenteRestClient fuenteRestClient) {
+  public Fachada(PdIRepository pdiRepository, SolicitudesRestClient solicitudesRestClient) {
     this.pdiRepository = pdiRepository;
     this.solicitudesRestClient = solicitudesRestClient;
-    this.fuenteRestClient = fuenteRestClient;
   }
 
   public PdIDTO procesar(PdIDTO pdIDTO) {
@@ -44,24 +40,35 @@ public class Fachada {
   }
 
   public PdIDTO buscarPdIPorId(String var1) {
-    return this.pdiRepository.findById(var1)
-            .map(pdi -> new PdIDTO(String.valueOf(pdi.getId()), pdi.getHechoId()))
-            .orElseThrow(() -> new NoSuchElementException(var1 + " no existe"));
+
+      log.info("Buscando PdI con id: " + var1);
+      PdI pdi = pdiRepository.findById(var1)
+              .orElseThrow(() -> new NoSuchElementException("No existe PdI con id " + var1));
+      return pdiToDto(pdi);
+
   }
 
-  public List<PdIDTO> buscarPorHecho(String var1) {
-    return this.pdiRepository.findByHechoId(var1)
-            .stream()
-            .map(pdi -> new PdIDTO(String.valueOf(pdi.getId()), pdi.getHechoId()))
-            .toList();
+  public List<PdIDTO> buscarPorHecho(String hechoId) {
+
+    List<PdIDTO> pdis;
+    try {
+      log.info("Buscando PdI por hechoId: " + hechoId);
+      pdis = pdiRepository.findByHechoId(hechoId).stream().map(this::pdiToDto).toList();
+    } catch (Exception e) {
+      throw new NoSuchElementException("No existen PdIs con hecho " + hechoId);
+    }
+
+    return pdis;
   }
 
   public List<PdIDTO> buscarTodos() {
+    log.info("Buscando todos los PdIs");
     return this.pdiRepository.findAll()
             .stream()
-            .map(pdi -> new PdIDTO(String.valueOf(pdi.getId()), pdi.getHechoId()))
+            .map(this::pdiToDto)
             .toList();
   }
+
   public List<PdIDTO> procesarLista(List<PdIDTO> listaDto) {
     return listaDto.stream()
             .map(this::procesar) // reusa tu procesar() individual
