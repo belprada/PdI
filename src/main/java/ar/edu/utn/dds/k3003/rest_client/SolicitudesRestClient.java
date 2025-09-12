@@ -28,6 +28,11 @@ public class SolicitudesRestClient {
                 .body(new ParameterizedTypeReference<List<SolicitudDTO>>() {});
     }
 
-//    public boolean estaActivo
+    public boolean estaActivo(String hechoId) {
+        return Boolean.TRUE.equals(restClient.get()
+                .uri("/api/solicitudes/activo/{hechoId}", hechoId)
+                .retrieve()
+                .body(Boolean.class));
+    }
 
 }

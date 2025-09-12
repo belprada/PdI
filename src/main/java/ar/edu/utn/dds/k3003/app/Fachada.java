@@ -6,11 +6,13 @@ import ar.edu.utn.dds.k3003.model.PdI;
 import ar.edu.utn.dds.k3003.repository.PdIRepository;
 import ar.edu.utn.dds.k3003.rest_client.FuenteRestClient;
 import ar.edu.utn.dds.k3003.rest_client.SolicitudesRestClient;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
+@Slf4j
 public class Fachada {
 
   private final PdIRepository pdiRepository;
@@ -28,12 +30,17 @@ public class Fachada {
 
     PdI pdiNuevo = dtoToPDI(pdIDTO);
     try {
-      fuenteRestClient.findHechoById(pdiNuevo.getHechoId());
+      log.info("Verificando hecho con id: " + pdiNuevo.getHechoId());
+      if(solicitudesRestClient.estaActivo(pdiNuevo.getHechoId())) {
+      log.info("Guardando pdi con id: " + pdiNuevo.getHechoId());
       this.pdiRepository.save(pdiNuevo);
-      return pdiToDto(pdiNuevo);
+
+      }
     }  catch (Exception e) {
         throw new NoSuchElementException("No existe hecho activo bajo el id " + pdiNuevo.getHechoId());
     }
+    return pdiToDto(pdiNuevo);
+
   }
 
   public PdIDTO buscarPdIPorId(String var1) {
