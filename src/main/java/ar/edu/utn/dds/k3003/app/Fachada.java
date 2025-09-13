@@ -120,5 +120,8 @@ public class Fachada {
             pdi.getEtiquetas()
     );
   }
-
+  public String borrarTodo() {
+    pdiRepository.deleteAll();
+    return "Se eliminaron todas las solicitudes";
+  }
 }

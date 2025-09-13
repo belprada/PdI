@@ -55,5 +55,8 @@ public class PdIController {
                                                             @RequestBody PdIDTO dto) {
         return ResponseEntity.ok(fachada.actualizarPorHecho(hecho, dto));
     }
-
+    @PostMapping("/borrarTodo")
+    public ResponseEntity<String> borrarTodo() {
+        return ResponseEntity.ok(fachada.borrarTodo());
+    }
 }
