@@ -1,5 +1,5 @@
 package ar.edu.utn.dds.k3003.app;
-
+import ar.edu.utn.dds.k3003.metrics.MetricsService;
 import ar.edu.utn.dds.k3003.facades.dtos.PdIDTO;
 import ar.edu.utn.dds.k3003.model.PdI;
 import ar.edu.utn.dds.k3003.repository.PdIRepository;
@@ -15,28 +15,36 @@ public class Fachada {
 
   private final PdIRepository pdiRepository;
   private final SolicitudesRestClient solicitudesRestClient;
+  private final MetricsService metricsService;
 
-
-  public Fachada(PdIRepository pdiRepository, SolicitudesRestClient solicitudesRestClient) {
+  public Fachada(PdIRepository pdiRepository, SolicitudesRestClient solicitudesRestClient, MetricsService metricsService) {
     this.pdiRepository = pdiRepository;
     this.solicitudesRestClient = solicitudesRestClient;
+      this.metricsService = metricsService;
   }
 
+
   public PdIDTO procesar(PdIDTO pdIDTO) {
-
     PdI pdiNuevo = dtoToPDI(pdIDTO);
+
     try {
-      log.info("Verificando hecho con id: " + pdiNuevo.getHechoId());
-      if(solicitudesRestClient.estaActivo(pdiNuevo.getHechoId())) {
-      log.info("Guardando pdi con id: " + pdiNuevo.getHechoId());
-      this.pdiRepository.save(pdiNuevo);
+      log.info("Verificando hecho con id: {}", pdiNuevo.getHechoId());
 
+      if (solicitudesRestClient.estaActivo(pdiNuevo.getHechoId())) {
+        log.info("Guardando pdi con id: {}", pdiNuevo.getHechoId());
+        this.pdiRepository.save(pdiNuevo);
+
+       //DataDog
+          metricsService.incrementSuccess();
       }
-    }  catch (Exception e) {
-        throw new NoSuchElementException("No existe hecho activo bajo el id " + pdiNuevo.getHechoId());
-    }
-    return pdiToDto(pdiNuevo);
 
+    } catch (Exception e) {
+      //DataDog
+        metricsService.incrementError();
+      throw new NoSuchElementException("No existe hecho activo bajo el id " + pdiNuevo.getHechoId());
+    }
+
+    return pdiToDto(pdiNuevo);
   }
 
   public PdIDTO buscarPdIPorId(String var1) {
