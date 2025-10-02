@@ -21,7 +21,6 @@ public class MetricsService {
                 .build();
     }
 
-
     public void incrementSuccess() {
         log.info("Incrementando métrica de éxito");
         statsd.incrementCounter("pdi.success");
@@ -32,8 +31,6 @@ public class MetricsService {
         log.info("Incrementando métrica de error");
         statsd.incrementCounter("pdi.error");
     }
-
-
     public void recordErrorRatio(int errores, int exitos) {
         if (exitos == 0) {
             statsd.recordGaugeValue("pdi.error.ratio", 0.0);

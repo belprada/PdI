@@ -28,10 +28,10 @@ public class ImageAnalysisService {
     @Value("${image.labeling.api.key}")
     private String imageLabelingApiKey;
 
-    @Value("${ocr.api.url:https://api.ocr.space/parse/imageurl}")
+    @Value("${ocr.api.url}")
     private String ocrApiUrl;
 
-    @Value("${image.labeling.api.url:https://api.apilayer.com/image_labeling/url}")
+    @Value("${image.labeling.api.url}")
     private String imageLabelingApiUrl;
 
     public ImageAnalysisService(RestTemplate restTemplate) {
