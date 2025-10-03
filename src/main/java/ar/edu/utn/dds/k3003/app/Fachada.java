@@ -1,6 +1,7 @@
 package ar.edu.utn.dds.k3003.app;
 
 import ar.edu.utn.dds.k3003.dto.PdIDTO;
+import ar.edu.utn.dds.k3003.mappers.PdIMapper;
 import ar.edu.utn.dds.k3003.model.PdI;
 import ar.edu.utn.dds.k3003.repository.PdIRepository;
 import ar.edu.utn.dds.k3003.rest_client.SolicitudesRestClient;
@@ -20,17 +21,20 @@ public class Fachada {
   private final PdIRepository pdiRepository;
   private final SolicitudesRestClient solicitudesRestClient;
   private final ImageAnalysisService imageAnalysisService;
+  private final PdIMapper mapper;
 
   public Fachada(PdIRepository pdiRepository,
                  SolicitudesRestClient solicitudesRestClient,
-                 ImageAnalysisService imageAnalysisService) {
+                 ImageAnalysisService imageAnalysisService,
+                 PdIMapper mapper) {
     this.pdiRepository = pdiRepository;
     this.solicitudesRestClient = solicitudesRestClient;
     this.imageAnalysisService = imageAnalysisService;
+    this.mapper = mapper;
   }
 
   public PdIDTO procesar(PdIDTO pdIDTO) {
-    PdI pdiNuevo = dtoToPDI(pdIDTO);
+    PdI pdiNuevo = mapper.toEntity(pdIDTO);
 
     try {
       log.info("Verificando hecho con id: " + pdiNuevo.getHechoId());
@@ -51,13 +55,13 @@ public class Fachada {
           pdiGuardado = this.pdiRepository.save(pdiGuardado);
         }
 
-        return pdiToDto(pdiGuardado);
+        return mapper.toDto(pdiGuardado);
       }
     } catch (Exception e) {
       throw new NoSuchElementException("No existe hecho activo bajo el id " + pdiNuevo.getHechoId());
     }
 
-    return pdiToDto(pdiNuevo);
+    return mapper.toDto(pdiNuevo);
   }
 
   private void procesarImagen(PdI pdi) {
@@ -73,8 +77,8 @@ public class Fachada {
               imageAnalysisService.processImage(pdi.getImagenUrl());
 
       // Actualizar PDI con los resultados
-      pdi.setOcrText(result.getOcrText());
-      pdi.setEtiquetasIA(result.getLabels());
+      pdi.setOcrText(result.ocrText());
+      pdi.setEtiquetasIA(result.labels());
       pdi.setEstadoProcesamiento(PdI.EstadoProcesamiento.COMPLETADO);
       pdi.setFechaProcesamiento(LocalDateTime.now());
 
@@ -92,9 +96,6 @@ public class Fachada {
     }
   }
 
-  /**
-   * Método para reprocesar PDIs que fallaron o están pendientes
-   */
   public PdIDTO reprocesarImagen(String pdiId) {
     PdI pdi = pdiRepository.findById(pdiId)
             .orElseThrow(() -> new NoSuchElementException("No existe PdI con id " + pdiId));
@@ -104,32 +105,33 @@ public class Fachada {
     }
 
     procesarImagen(pdi);
-    return pdiToDto(pdi);
+    return mapper.toDto(pdi);
   }
 
   public PdIDTO buscarPdIPorId(String var1) {
     log.info("Buscando PdI con id: " + var1);
     PdI pdi = pdiRepository.findById(var1)
             .orElseThrow(() -> new NoSuchElementException("No existe PdI con id " + var1));
-    return pdiToDto(pdi);
+    return mapper.toDto(pdi);
   }
 
   public List<PdIDTO> buscarPorHecho(String hechoId) {
-    List<PdIDTO> pdis;
     try {
       log.info("Buscando PdI por hechoId: " + hechoId);
-      pdis = pdiRepository.findByHechoId(hechoId).stream().map(this::pdiToDto).toList();
+      return pdiRepository.findByHechoId(hechoId)
+              .stream()
+              .map(mapper::toDto)
+              .toList();
     } catch (Exception e) {
       throw new NoSuchElementException("No existen PdIs con hecho " + hechoId);
     }
-    return pdis;
   }
 
   public List<PdIDTO> buscarTodos() {
     log.info("Buscando todos los PdIs");
     return this.pdiRepository.findAll()
             .stream()
-            .map(this::pdiToDto)
+            .map(mapper::toDto)
             .toList();
   }
 
@@ -143,21 +145,14 @@ public class Fachada {
     PdI existente = pdiRepository.findById(id)
             .orElseThrow(() -> new NoSuchElementException("No existe PdI con id " + id));
 
-    // Verificar si cambió la URL de imagen
     boolean imagenCambio = !StringUtils.hasText(existente.getImagenUrl()) &&
             StringUtils.hasText(dto.imagenUrl()) ||
             StringUtils.hasText(existente.getImagenUrl()) &&
                     !existente.getImagenUrl().equals(dto.imagenUrl());
 
-    // Actualizar campos
-    existente.setHechoId(dto.hechoId());
-    existente.setDescripcion(dto.descripcion());
-    existente.setLugar(dto.lugar());
-    existente.setMomento(dto.momento());
-    existente.setContenido(dto.contenido());
-    existente.setImagenUrl(dto.imagenUrl());
+    // Usar mapper para actualizar los campos del entity con el DTO
+    mapper.updateEntityFromDto(dto, existente);
 
-    // Si cambió la imagen, reprocesar
     if (imagenCambio && StringUtils.hasText(dto.imagenUrl())) {
       existente.setEstadoProcesamiento(PdI.EstadoProcesamiento.PENDIENTE);
       existente.setOcrText(null);
@@ -167,12 +162,11 @@ public class Fachada {
 
     PdI guardado = pdiRepository.save(existente);
 
-    // Procesar imagen si es necesario
     if (imagenCambio && StringUtils.hasText(dto.imagenUrl())) {
       procesarImagen(guardado);
     }
 
-    return pdiToDto(guardado);
+    return mapper.toDto(guardado);
   }
 
   public List<PdIDTO> actualizarPorHecho(String hecho, PdIDTO dto) {
@@ -182,41 +176,12 @@ public class Fachada {
       throw new NoSuchElementException("No existen PdIs con hecho " + hecho);
     }
 
-    lista.forEach(pdi -> {
-      pdi.setHechoId(dto.hechoId());
-      // Aplicar otros campos según necesidad
-    });
+    lista.forEach(pdi -> mapper.updateEntityFromDto(dto, pdi));
     pdiRepository.saveAll(lista);
 
     return lista.stream()
-            .map(this::pdiToDto)
+            .map(mapper::toDto)
             .toList();
-  }
-
-  public PdI dtoToPDI(PdIDTO pdiDTO) {
-    if (StringUtils.hasText(pdiDTO.imagenUrl())) {
-      // Constructor para PDI con imagen
-      return new PdI(
-              pdiDTO.hechoId(),
-              pdiDTO.descripcion(),
-              pdiDTO.lugar(),
-              pdiDTO.momento(),
-              pdiDTO.contenido(),
-              pdiDTO.imagenUrl());
-    } else {
-      // Constructor legacy para PDI sin imagen
-      return new PdI(
-              pdiDTO.hechoId(),
-              pdiDTO.descripcion(),
-              pdiDTO.lugar(),
-              pdiDTO.momento(),
-              pdiDTO.contenido(),
-              pdiDTO.etiquetas());
-    }
-  }
-
-  private PdIDTO pdiToDto(PdI pdi) {
-    return PdIDTO.fromProcessedEntity(pdi);
   }
 
   public String borrarTodo() {
