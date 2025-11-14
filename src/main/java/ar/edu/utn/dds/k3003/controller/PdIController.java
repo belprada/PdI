@@ -60,11 +60,9 @@ public class PdIController {
 
     @PostMapping
     public ResponseEntity<PdIDTO> crearPdI(@RequestBody PdIDTO pdIDTO) {
-        try {
-            return ResponseEntity.status(HttpStatus.CREATED).body(fachada.procesar(pdIDTO));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(fachada.procesar(pdIDTO));
+
     }
 
     @PostMapping("/lote")
