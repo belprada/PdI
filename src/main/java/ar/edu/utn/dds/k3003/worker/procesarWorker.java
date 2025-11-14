@@ -2,7 +2,8 @@ package ar.edu.utn.dds.k3003.worker;
 import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.dto.PdIDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rabbitmq.client.*;
 
 import java.io.IOException;
@@ -47,7 +48,8 @@ public class procesarWorker extends DefaultConsumer {
         try {
 
             ObjectMapper mapper = new ObjectMapper();
-            mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+            mapper.registerModule(new JavaTimeModule());
+            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
             log.info("Attempting to process message");
 

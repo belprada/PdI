@@ -1,7 +1,6 @@
 package ar.edu.utn.dds.k3003.service;
 
 import ar.edu.utn.dds.k3003.service.analysis.ImageAnalysisStrategy;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

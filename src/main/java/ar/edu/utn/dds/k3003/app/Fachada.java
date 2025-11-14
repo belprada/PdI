@@ -6,6 +6,7 @@ import ar.edu.utn.dds.k3003.model.PdI;
 import ar.edu.utn.dds.k3003.repository.PdIRepository;
 import ar.edu.utn.dds.k3003.rest_client.SolicitudesRestClient;
 import ar.edu.utn.dds.k3003.service.ImageAnalysisService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class Fachada {
 
   private final PdIRepository pdiRepository;
@@ -31,18 +33,7 @@ public class Fachada {
   private final PdIMapper mapper;
   private final MeterRegistry meterRegistry; //Datadog
 
-  public Fachada(PdIRepository pdiRepository,
-                 SolicitudesRestClient solicitudesRestClient,
-                 ImageAnalysisService imageAnalysisService,
-                 PdIMapper mapper,
-                 MeterRegistry meterRegistry) {
-    this.pdiRepository = pdiRepository;
-    this.solicitudesRestClient = solicitudesRestClient;
-    this.imageAnalysisService = imageAnalysisService;
-    this.mapper = mapper;
-    this.meterRegistry = meterRegistry;
-  }
-  private void registrarMetricasProcesamiento(PdI pdi, String origen, long startNanos) {
+    private void registrarMetricasProcesamiento(PdI pdi, String origen, long startNanos) {
     String tipo = StringUtils.hasText(pdi.getImagenUrl()) ? "con_imagen" : "sin_imagen";
     String resultado;
 
@@ -139,7 +130,7 @@ public class Fachada {
     return mapper.toDto(pdiNuevo);
   }
 
-  private void procesarImagen(PdI pdi) {
+  private void procesarImagen(PdI pdi) throws Exception{
 
     long start = System.nanoTime();
     try {
@@ -149,7 +140,7 @@ public class Fachada {
       pdi.setEstadoProcesamiento(PdI.EstadoProcesamiento.PROCESANDO);
       pdiRepository.save(pdi);
       //validar que la imagen existe
-      validarAccesibilidadImagen(pdi.getImagenUrl());
+      //validarAccesibilidadImagen(pdi.getImagenUrl());
 
       // Procesar la imagen
       ImageAnalysisService.ImageAnalysisResult result =
@@ -172,13 +163,15 @@ public class Fachada {
       pdi.setEstadoProcesamiento(PdI.EstadoProcesamiento.ERROR);
       pdi.setFechaProcesamiento(LocalDateTime.now());
       pdiRepository.save(pdi);
+      throw new Exception("Error al procesar imagen");
+
     }   finally {
     // Siempre registramos métricas con el estado final del PDI
     registrarMetricasProcesamiento(pdi, "procesar_imagen", start);
   }
   }
 
-  public PdIDTO reprocesarImagen(String pdiId) {
+  public PdIDTO reprocesarImagen(String pdiId) throws Exception {
     PdI pdi = pdiRepository.findById(pdiId)
             .orElseThrow(() -> new NoSuchElementException("No existe PdI con id " + pdiId));
 
@@ -223,7 +216,7 @@ public class Fachada {
             .toList();
   }
 
-  public PdIDTO actualizarPorId(String id, PdIDTO dto) {
+  public PdIDTO actualizarPorId(String id, PdIDTO dto) throws Exception {
     PdI existente = pdiRepository.findById(id)
             .orElseThrow(() -> new NoSuchElementException("No existe PdI con id " + id));
 

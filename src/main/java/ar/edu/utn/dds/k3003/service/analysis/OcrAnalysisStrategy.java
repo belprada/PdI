@@ -28,7 +28,7 @@ public class OcrAnalysisStrategy implements ImageAnalysisStrategy {
     }
 
     @Override
-    public ImageAnalysisService.ImageAnalysisResult analyze(String imageUrl) {
+    public ImageAnalysisService.ImageAnalysisResult analyze(String imageUrl) throws RuntimeException{
         try {
             String cleanUrl = cleanImageUrl(imageUrl);
             log.info("Procesando OCR para imagen: {}", cleanUrl);
@@ -63,6 +63,7 @@ public class OcrAnalysisStrategy implements ImageAnalysisStrategy {
 
         } catch (Exception e) {
             log.error("Error procesando OCR para imagen {}: {}", imageUrl, e.getMessage());
+            throw new RuntimeException();
         }
         return new ImageAnalysisService.ImageAnalysisResult("", null);
     }
