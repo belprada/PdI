@@ -12,6 +12,9 @@ import org.springframework.util.StringUtils;
 
 
 import io.micrometer.core.instrument.MeterRegistry;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -70,6 +73,30 @@ public class Fachada {
     ).record(duracionNanos, TimeUnit.NANOSECONDS);
   }
 
+  private void validarAccesibilidadImagen(String imagenUrl) {
+    if (!StringUtils.hasText(imagenUrl)) {
+      throw new IllegalArgumentException("URL de imagen vacía");
+    }
+
+    try {
+      URL url = new URL(imagenUrl);
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      connection.setRequestMethod("HEAD");
+      connection.setConnectTimeout(5000);
+      connection.setReadTimeout(5000);
+
+      int responseCode = connection.getResponseCode();
+
+      if (responseCode >= 400) {
+        throw new IllegalStateException(
+                "Imagen no accesible. Código HTTP: " + responseCode
+        );
+      }
+    } catch (Exception e) {
+      // Cualquier problema de conexión/parsing lo consideramos error de imagen
+      throw new IllegalStateException("No se pudo acceder a la imagen: " + e.getMessage(), e);
+    }
+  }
 
   public PdIDTO procesar(PdIDTO pdIDTO) {
     PdI pdiNuevo = mapper.toEntity(pdIDTO);
@@ -121,6 +148,8 @@ public class Fachada {
       // Marcar como procesando
       pdi.setEstadoProcesamiento(PdI.EstadoProcesamiento.PROCESANDO);
       pdiRepository.save(pdi);
+      //validar que la imagen existe
+      validarAccesibilidadImagen(pdi.getImagenUrl());
 
       // Procesar la imagen
       ImageAnalysisService.ImageAnalysisResult result =
