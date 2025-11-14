@@ -10,9 +10,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+
+import io.micrometer.core.instrument.MeterRegistry;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
@@ -22,15 +26,48 @@ public class Fachada {
   private final SolicitudesRestClient solicitudesRestClient;
   private final ImageAnalysisService imageAnalysisService;
   private final PdIMapper mapper;
+  private final MeterRegistry meterRegistry; //Datadog
 
   public Fachada(PdIRepository pdiRepository,
                  SolicitudesRestClient solicitudesRestClient,
                  ImageAnalysisService imageAnalysisService,
-                 PdIMapper mapper) {
+                 PdIMapper mapper,
+                 MeterRegistry meterRegistry) {
     this.pdiRepository = pdiRepository;
     this.solicitudesRestClient = solicitudesRestClient;
     this.imageAnalysisService = imageAnalysisService;
     this.mapper = mapper;
+    this.meterRegistry = meterRegistry;
+  }
+  private void registrarMetricasProcesamiento(PdI pdi, String origen, long startNanos) {
+    String tipo = StringUtils.hasText(pdi.getImagenUrl()) ? "con_imagen" : "sin_imagen";
+    String resultado;
+
+    if (pdi.getEstadoProcesamiento() == PdI.EstadoProcesamiento.COMPLETADO) {
+      resultado = "ok";
+    } else if (pdi.getEstadoProcesamiento() == PdI.EstadoProcesamiento.ERROR) {
+      resultado = "error";
+    } else {
+      resultado = "otro";
+    }
+
+    long duracionNanos = System.nanoTime() - startNanos;
+
+    // Contador de PDIs procesados
+    meterRegistry.counter(
+            "metamapa.pdi.procesados",
+            "resultado", resultado,
+            "tipo", tipo,
+            "origen", origen
+    ).increment();
+
+    // Tiempo de procesamiento de un PDI
+    meterRegistry.timer(
+            "metamapa.pdi.procesamiento",
+            "resultado", resultado,
+            "tipo", tipo,
+            "origen", origen
+    ).record(duracionNanos, TimeUnit.NANOSECONDS);
   }
 
 
@@ -50,15 +87,25 @@ public class Fachada {
         if (StringUtils.hasText(pdiGuardado.getImagenUrl())) {
           procesarImagen(pdiGuardado);
         } else {
+          // Si no tiene imagen, medir el procesamiento "rápido"
+          long start = System.nanoTime();
           // Si no tiene imagen, marcar como completado
           pdiGuardado.setEstadoProcesamiento(PdI.EstadoProcesamiento.COMPLETADO);
           pdiGuardado.setFechaProcesamiento(LocalDateTime.now());
           pdiGuardado = this.pdiRepository.save(pdiGuardado);
+
+          registrarMetricasProcesamiento(pdiGuardado, "procesar", start);
         }
 
         return mapper.toDto(pdiGuardado);
       }
     } catch (Exception e) {
+      meterRegistry.counter(
+              "metamapa.pdi.procesados",
+              "resultado", "error",
+              "tipo", "desconocido",
+              "origen", "procesar"
+      ).increment();
       throw new NoSuchElementException("No existe hecho activo bajo el id " + pdiNuevo.getHechoId());
     }
 
@@ -66,6 +113,8 @@ public class Fachada {
   }
 
   private void procesarImagen(PdI pdi) {
+
+    long start = System.nanoTime();
     try {
       log.info("Iniciando procesamiento de imagen para PDI id: {}", pdi.getId());
 
@@ -94,7 +143,10 @@ public class Fachada {
       pdi.setEstadoProcesamiento(PdI.EstadoProcesamiento.ERROR);
       pdi.setFechaProcesamiento(LocalDateTime.now());
       pdiRepository.save(pdi);
-    }
+    }   finally {
+    // Siempre registramos métricas con el estado final del PDI
+    registrarMetricasProcesamiento(pdi, "procesar_imagen", start);
+  }
   }
 
   public PdIDTO reprocesarImagen(String pdiId) {
