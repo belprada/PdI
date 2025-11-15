@@ -106,7 +106,6 @@ public class Fachada {
         // Si tiene imagen, procesar análisis
         if (StringUtils.hasText(pdiGuardado.getImagenUrl())) {
           procesarImagen(pdiGuardado);
-          busquedaClient.notificarPdICreado(mapper.toDto(pdiGuardado));
         } else {
           // Si no tiene imagen, medir el procesamiento "rápido"
           long start = System.nanoTime();
