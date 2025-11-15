@@ -1,4 +1,5 @@
 package ar.edu.utn.dds.k3003.worker;
+
 import ar.edu.utn.dds.k3003.app.Fachada;
 import ar.edu.utn.dds.k3003.dto.PdIDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,17 +11,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
-public class procesarWorker extends DefaultConsumer {
-
-
+public class ProcesarWorker extends DefaultConsumer {
 
     private final String queueName;
     private final Fachada ff;
 
+    private static final Logger log = Logger.getLogger(String.valueOf(ProcesarWorker.class));
 
-    private static final Logger log = Logger.getLogger(String.valueOf(procesarWorker.class));
-
-    protected procesarWorker(Channel channel, String queueName, Fachada ff) {
+    protected ProcesarWorker(Channel channel, String queueName, Fachada ff) {
         super(channel);
         this.queueName = queueName;
         this.ff = ff;

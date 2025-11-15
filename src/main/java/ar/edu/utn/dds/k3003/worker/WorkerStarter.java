@@ -38,7 +38,7 @@ public class WorkerStarter {
             String queueName = System.getenv().getOrDefault("QUEUE_NAME", "hechos");
             queueInitializer.ensureQueueExists(channel, queueName);
 
-            procesarWorker worker = new procesarWorker(channel, queueName, ff);
+            ProcesarWorker worker = new ProcesarWorker(channel, queueName, ff);
             worker.init();
 
             log.info("Worker initialized and consuming messages!");

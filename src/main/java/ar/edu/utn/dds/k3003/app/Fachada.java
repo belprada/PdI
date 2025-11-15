@@ -4,6 +4,7 @@ import ar.edu.utn.dds.k3003.dto.PdIDTO;
 import ar.edu.utn.dds.k3003.mappers.PdIMapper;
 import ar.edu.utn.dds.k3003.model.PdI;
 import ar.edu.utn.dds.k3003.repository.PdIRepository;
+import ar.edu.utn.dds.k3003.rest_client.BusquedaNotificationClient;
 import ar.edu.utn.dds.k3003.rest_client.SolicitudesRestClient;
 import ar.edu.utn.dds.k3003.service.ImageAnalysisService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class Fachada {
   private final ImageAnalysisService imageAnalysisService;
   private final PdIMapper mapper;
   private final MeterRegistry meterRegistry; //Datadog
+  private final BusquedaNotificationClient busquedaClient;
 
     private void registrarMetricasProcesamiento(PdI pdi, String origen, long startNanos) {
     String tipo = StringUtils.hasText(pdi.getImagenUrl()) ? "con_imagen" : "sin_imagen";
@@ -104,6 +106,7 @@ public class Fachada {
         // Si tiene imagen, procesar análisis
         if (StringUtils.hasText(pdiGuardado.getImagenUrl())) {
           procesarImagen(pdiGuardado);
+          busquedaClient.notificarPdICreado(mapper.toDto(pdiGuardado));
         } else {
           // Si no tiene imagen, medir el procesamiento "rápido"
           long start = System.nanoTime();
@@ -113,6 +116,7 @@ public class Fachada {
           pdiGuardado = this.pdiRepository.save(pdiGuardado);
 
           registrarMetricasProcesamiento(pdiGuardado, "procesar", start);
+          busquedaClient.notificarPdICreado(mapper.toDto(pdiGuardado));
         }
 
         return mapper.toDto(pdiGuardado);
@@ -153,6 +157,8 @@ public class Fachada {
       pdi.setFechaProcesamiento(LocalDateTime.now());
 
       pdiRepository.save(pdi);
+
+      busquedaClient.notificarPdICreado(mapper.toDto(pdi));
 
       log.info("Procesamiento de imagen completado para PDI id: {}", pdi.getId());
 
